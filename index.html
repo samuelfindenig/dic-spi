@@ -1,0 +1,1277 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+
+    <title>SPI - Serial Peripheral Interface</title>
+
+    <!-- Reveal.js core styles -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/black.min.css">
+
+    <!-- Code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai.min.css">
+
+    <!-- Custom styling -->
+    <style>
+      :root {
+        --r-main-font: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        --r-heading-font: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        --r-link-color: #00adee;
+        --r-selection-background-color: #00adee;
+      }
+
+      .reveal h1,
+      .reveal h2,
+	  .reveal h4, 
+      .reveal h3 {
+        text-transform: none;
+        font-weight: 600;
+        color: #00adee;
+
+      }
+
+	
+      .reveal p,
+      .reveal li {
+        font-size: 0.8em;
+        line-height: 1.2em;
+      }
+
+      ul {
+        list-style: none;
+        padding-left: 0;
+      }
+
+      li::before {
+        content: "";
+        color: #00adee;
+        font-weight: bold;
+      }
+
+      .author {
+        font-size: 0.9em;
+        opacity: 0.8;
+      }
+
+      .subsection {
+        font-size: 1.3em;
+        color: #00adee;
+        margin-bottom: 0.5em;
+      }
+
+      code {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.2em 0.4em;
+        border-radius: 5px;
+        font-family: 'Courier New', monospace;
+      }
+
+      .code-container {
+        background: #2d2d2d;
+        padding: 15px;
+        border-radius: 10px;
+        font-size: 0.8em;
+        margin: 15px 0;
+      }
+
+      .comparison-table {
+        font-size: 0.7em;
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .comparison-table th,
+      .comparison-table td {
+        border: 1px solid #444;
+        padding: 8px;
+        text-align: left;
+      }
+
+      .comparison-table th {
+        background: rgba(0, 173, 238, 0.2);
+      }
+
+      .diagram {
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        color: black;
+        font-family: monospace;
+      }
+
+      .timing-diagram {
+        background: #1e1e1e;
+        padding: 15px;
+        border-radius: 10px;
+        font-family: monospace;
+        font-size: 0.7em;
+        line-height: 1.2;
+      }
+
+      .two-column {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+
+      .fragment.highlight-blue {
+        color: #00adee;
+      }
+
+      .fragment.highlight-green {
+        color: #00ff00;
+      }
+
+      .fragment.highlight-red {
+        color: #ff4444;
+      }
+
+      /* Add soft transitions between slides */
+      .reveal .slides section {
+        transition: all 0.4s ease;
+      }
+
+      .center-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      
+      .image-placeholder {
+        background: rgba(0, 173, 238, 0.1);
+        border: 2px dashed #00adee;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        margin: 20px 0;
+        font-style: italic;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <!-- Titel -->
+        <section>
+          <h2>SPI - Serial Peripheral Interface</h2>
+          <p class="author">Samuel Findenig und Oskar Rotman</p>
+        </section>
+
+        <section>
+          <h3>Was erwartet euch?</h3>
+          <ul>
+            <li class="fragment">Grundprinzip und Aufbau von SPI</li>
+            <li class="fragment">Detaillierte Betrachtung der Signale und Timing</li>
+            <li class="fragment">Funktionsweise in Mikrocontrollern</li>
+            <li class="fragment">Praktische Anwendungsbeispiele</li>
+            <li class="fragment">Vergleich mit anderen Schnittstellen</li>
+          </ul>
+        </section>
+
+		<!-- Geschichte -->
+        <section>
+          <h2>Geschichte & Entwicklung</h2>
+          <div style="text-align: left;">
+            <p class="fragment"><strong>1979:</strong> Entwicklung bei Motorola als serielle Schnittstelle</p>
+            <p class="fragment"><strong>1980er:</strong> Erste Integration in Mikrocontroller</p>
+            <p class="fragment"><strong>1990er:</strong> Wird zum De-facto-Standard</p>
+            <p class="fragment"><strong>2000er:</strong> Ubiquitär in Embedded Systems</p>
+            <p class="fragment"><strong>Heute:</strong> Weiterentwicklungen wie QSPI, Dual SPI</p>
+          </div>
+        </section>
+
+        <section>
+          <!-- Subslide 1: Einführung -->
+          <section>
+            <h2>Was ist SPI?</h2>
+            <p>
+              Das <strong>Serial Peripheral Interface (SPI)</strong> ist ein 
+              <strong>synchrones serielles Kommunikationsprotokoll</strong>, 
+              das zur schnellen Datenübertragung zwischen Mikrocontrollern und Peripheriegeräten verwendet wird.
+            </p>
+          </section>
+
+          <!-- Subslide 2: Eigenschaften -->
+          <section>
+            <h3>Eigenschaften</h3>
+            <ul>
+              <li class="fragment"><strong>Synchron:</strong> Gemeinsamer Takt für Sender und Empfänger</li>
+              <li class="fragment"><strong>Voll-Duplex:</strong> Gleichzeitiges Senden und Empfangen</li>
+              <li class="fragment"><strong>Master-Slave-Prinzip:</strong> Master steuert den Bus</li>
+              <li class="fragment"><strong>Kurze Distanzen:</strong> Kommunikation meist auf derselben Platine</li>
+              <li class="fragment"><strong>Hohe Geschwindigkeit:</strong> Typisch bis über 100&nbsp;MHz</li>
+            </ul>
+          </section>
+
+          <!-- Subslide 3: Vorteile -->
+          <section>
+            <h3>Vorteile</h3>
+            <ul>
+              <li class="fragment">Einfaches und flexibles Protokoll</li>
+              <li class="fragment">Sehr hohe Übertragungsraten</li>
+              <li class="fragment">Geringer CPU-Overhead</li>
+              <li class="fragment">Variable Datenlängen möglich</li>
+            </ul>
+          </section>
+
+          <!-- Subslide 4: Nachteile -->
+          <section>
+            <h3>Nachteile</h3>
+            <ul>
+              <li class="fragment">Keine standardisierte Geräteadressierung</li>
+              <li class="fragment">Benötigt mehrere Chip-Select-Leitungen bei mehreren Slaves</li>
+              <li class="fragment">Keine eingebaute Fehlererkennung</li>
+              <li class="fragment">Begrenzte Leitungslänge (nicht busfähig wie I²C)</li>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <h2>Typische Einsatzgebiete</h2>
+
+          <div class="two-column">
+            <!-- Left column -->
+            <div>
+              <ul>
+                <li class="fragment">
+                  Sensoren
+                  <ul>
+                    <li class="fragment">Beschleunigungssensoren</li>
+                    <li class="fragment">Temperatursensoren</li>
+                    <li class="fragment">Drucksensoren</li>
+                    <li class="fragment">Gyroskope</li>
+                  </ul>
+                </li>
+
+                <li class="fragment">
+                  Speichermedien
+                  <ul>
+                    <li class="fragment">SD-Karten</li>
+                    <li class="fragment">Flash-Speicher</li>
+                    <li class="fragment">EEPROMs</li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Right column -->
+            <div>
+              <ul>
+                <li class="fragment">
+                  Displays
+                  <ul>
+                    <li class="fragment">OLED</li>
+                    <li class="fragment">TFT</li>
+                    <li class="fragment">LCD mit Controller</li>
+                  </ul>
+                </li>
+
+                <li class="fragment">
+                  Audio &amp; Kommunikation
+                  <ul>
+                    <li class="fragment">Audio-Codecs</li>
+                    <li class="fragment">WLAN-Module</li>
+                    <li class="fragment">Bluetooth-Module</li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+          </div>
+          
+        </section>
+
+        <section>
+          <!-- Subslide 1: Einführung -->
+          <section>
+            <h2>Master-Slave Architektur</h2>
+            <p>SPI folgt einem strengen Master-Slave-Prinzip</p>
+          </section>
+
+          <!-- Subslide 2: Master-Rollen -->
+          <section>
+            <h3>Master-Rollen</h3>
+            <ul>
+              <li class="fragment">Generiert Takt (SCK)</li>
+              <li class="fragment">Initiiert Kommunikation</li>
+              <li class="fragment">Wählt Slaves über SS aus</li>
+              <li class="fragment">Kontrolliert Timing</li>
+            </ul>
+          </section>
+
+          <!-- Subslide 3: Slave-Rollen -->
+          <section>
+            <h3>Slave-Rollen</h3>
+            <ul>
+              <li class="fragment">Reagiert auf Master</li>
+              <li class="fragment">Sendet Daten synchron</li>
+              <li class="fragment">Kann nicht eigenständig kommunizieren</li>
+              <li class="fragment">Wartet auf Selektion</li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- SPI-Signalleitungen -->
+        <section>
+          <h2>SPI-Signalleitungen</h2>
+          <p>Mindestens vier Leitungen für eine SPI-Verbindung:</p>
+          <table class="comparison-table">
+            <tr class="fragment">
+              <td><strong>MOSI</strong></td>
+              <td>Master Out Slave In</td>
+              <td>Daten vom Master zum Slave</td>
+            </tr>
+            <tr class="fragment">
+              <td><strong>MISO</strong></td>
+              <td>Master In Slave Out</td>
+              <td>Daten vom Slave zum Master</td>
+            </tr>
+            <tr class="fragment">
+              <td><strong>SCK</strong></td>
+              <td>Serial Clock</td>
+              <td>Takt-Signal vom Master</td>
+            </tr>
+            <tr class="fragment">
+              <td><strong>SS/CS</strong></td>
+              <td>Slave Select / Chip Select</td>
+              <td>Aktiviert den jeweiligen Slave (active-low)</td>
+            </tr>
+          </table>
+        </section>
+
+        <!-- Elektrische Eigenschaften -->
+        <section>
+          <h2>Elektrische Eigenschaften</h2>
+          <div class="two-column">
+            <div class="fragment">
+              <h4>Logikpegel:</h4>
+              <ul>
+                <li><strong>3.3V:</strong> Moderne Standardspannung</li>
+                <li><strong>5V:</strong> Ältere Systeme, Industrie</li>
+                <li><strong>1.8V:</strong> Low-Power Anwendungen</li>
+              </ul>
+            </div>
+            <div class="fragment">
+              <h4>Besonderheiten:</h4>
+              <ul>
+                <li>Push-Pull Ausgänge</li>
+                <li>Keine Pull-up Widerstände nötig</li>
+                <li>TTL/CMOS kompatible Pegel</li>
+                <li>Kurze Übertragungswege (&lt; 10cm)</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- Voll-Duplex Kommunikation -->
+        <section>
+          <h2>Voll-Duplex Kommunikation</h2>
+          <p>Daten werden gleichzeitig in beide Richtungen übertragen</p>
+          <div class="fragment">
+            <h4>Prinzip:</h4>
+            <ul>
+              <li>Jedes gesendete Bit bringt ein empfangenes Bit</li>
+              <li>Höhere effektive Datenrate</li>
+              <li>Echtzeit-Datenaustausch</li>
+              <li>Effiziente Bus-Nutzung</li>
+            </ul>
+          </div>
+          <div class="fragment">
+            <h4>Beispiel:</h4>
+            <p>Master sendet Kommando-Byte und empfängt gleichzeitig Sensor-Daten</p>
+          </div>
+        </section>
+
+        <!-- Multi-Slave Konfigurationen -->
+        <section>
+          <h2>Multi-Slave Konfigurationen</h2>
+          <div class="two-column">
+            <div class="fragment">
+              <h4>Unabhängige SS</h4>
+              <img src="img/SPI_three_slaves.svg.png">
+              <p><strong>Vorteil:</strong> Einfache Handhabung</p>
+            </div>
+            <div class="fragment">
+              <h4>Daisy-Chain</h4>
+              <img src="img/SPI_three_slaves_daisy_chained.svg.png">
+              <p><strong>Vorteil:</strong> Weniger Leitungen</p>
+            </div>
+          </div>
+          
+        </section>
+
+        <!-- SPI Modi -->
+        <section>
+          <h2>SPI Modi - CPOL und CPHA</h2>
+          <p>Vier Betriebsmodi durch Kombination von Clock-Polarität und Phase</p>
+          <div class="two-column">
+            <div class="fragment">
+              <h4>CPOL (Clock Polarity):</h4>
+              <ul>
+                <li><strong>0:</strong> Ruhepegel LOW</li>
+                <li><strong>1:</strong> Ruhepegel HIGH</li>
+              </ul>
+            </div>
+            <div class="fragment">
+              <h4>CPHA (Clock Phase):</h4>
+              <ul>
+                <li><strong>0:</strong> Daten bei erster Taktflanke</li>
+                <li><strong>1:</strong> Daten bei zweiter Taktflanke</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- SPI Mode Tabelle -->
+        <section>
+          <h2>SPI Mode Tabelle</h2>
+          <table class="comparison-table">
+            <tr>
+              <th>Mode</th>
+              <th>CPOL</th>
+              <th>CPHA</th>
+              <th>Beschreibung</th>
+            </tr>
+            <tr class="fragment">
+              <td><strong>0</strong></td>
+              <td>0</td>
+              <td>0</td>
+              <td>Daten bei steigender Flanke sampeln</td>
+            </tr>
+            <tr class="fragment">
+              <td><strong>1</strong></td>
+              <td>0</td>
+              <td>1</td>
+              <td>Daten bei fallender Flanke sampeln</td>
+            </tr>
+            <tr class="fragment">
+              <td><strong>2</strong></td>
+              <td>1</td>
+              <td>0</td>
+              <td>Daten bei fallender Flanke sampeln</td>
+            </tr>
+            <tr class="fragment">
+              <td><strong>3</strong></td>
+              <td>1</td>
+              <td>1</td>
+              <td>Daten bei steigender Flanke sampeln</td>
+            </tr>
+          </table>
+          <p class="fragment" style="margin-top: 20px;"><strong>Wichtig:</strong> Master und Slave müssen gleichen Mode verwenden!</p>
+        </section>
+
+        <!-- Timing-Diagramm -->
+        <section>
+          <h2>Timing-Diagramm - Mode 0</h2>
+          <img src="img/SPI_timing_diagram_CS.svg.png">
+          <div class="timing-diagram">
+          <ul style="font-size: 0.8em;">
+            <li class="fragment"><strong>SS geht LOW:</strong> Kommunikation startet</li>
+            <li class="fragment"><strong>Daten etablieren:</strong> Vor steigender Flanke</li>
+            <li class="fragment"><strong>Daten sampeln:</strong> Bei steigender Taktflanke</li>
+            <li class="fragment"><strong>SS geht HIGH:</strong> Kommunikation endet</li>
+          </ul>
+        </section>
+
+        <!-- Initialisierung -->
+        <section>
+          <h2>Initialisierung und Konfiguration</h2>
+          <p>Notwendige Einstellungen vor SPI-Betrieb:</p>
+          <div class="two-column">
+            <div class="fragment">
+              <h4>Hardware-Konfiguration:</h4>
+              <ul>
+                <li>Taktfrequenz einstellen</li>
+                <li>SPI-Modus wählen (CPOL/CPHA)</li>
+                <li>Datenformat (MSB/LSB first)</li>
+                <li>Slave-Select Pins konfigurieren</li>
+                <li>SPI-Modul aktivieren</li>
+              </ul>
+            </div>
+            <div class="fragment">
+              <h4>Software-Konfiguration:</h4>
+              <ul>
+                <li>Register setzen</li>
+                <li>Interrupts konfigurieren</li>
+                <li>DMA einrichten (optional)</li>
+                <li>Initialisierungssequenz</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- Übertragungsablauf -->
+        <section>
+          <h2>Übertragungsablauf</h2>
+          <ol style="font-size: 0.9em;">
+            <li class="fragment"><strong>Slave auswählen:</strong> SS-Pin auf LOW setzen</li>
+            <li class="fragment"><strong>Takt generieren:</strong> SCK mit gewünschter Frequenz</li>
+            <li class="fragment"><strong>Daten senden:</strong> Parallel-zu-Seriel auf MOSI</li>
+            <li class="fragment"><strong>Daten empfangen:</strong> Seriel-zu-Parallel von MISO</li>
+            <li class="fragment"><strong>Übertragung abschließen:</strong> SS-Pin auf HIGH setzen</li>
+          </ol>
+          <div class="fragment" style="margin-top: 20px;">
+            <p><strong>Besonderheit:</strong> Jedes gesendete Byte bringt automatisch ein empfangenes Byte.</p>
+          </div>
+        </section>
+
+        <!-- Mikrocontroller-Beispiel -->
+        <section>
+          <h2>Mikrocontroller-Beispiel</h2>
+          <p>Dedizierte SPI-Hardwaremodule in modernen Mikrocontrollern:</p>
+          <div class="two-column">
+            <div class="fragment">
+              <h4>AVR (Arduino)</h4>
+              <ul style="font-size: 0.8em;">
+                <li><strong>SPCR:</strong> SPI Control Register</li>
+                <li><strong>SPSR:</strong> SPI Status Register</li>
+                <li><strong>SPDR:</strong> SPI Data Register</li>
+                <li>Integrierter Shift-Register</li>
+                <li>Bis zu F_CPU/2 Geschwindigkeit</li>
+              </ul>
+            </div>
+            <div class="fragment">
+              <h4>STM32 (ARM)</h4>
+              <ul style="font-size: 0.8em;">
+                <li><strong>SPIx_CR1/CR2:</strong> Control Register</li>
+                <li><strong>SPIx_SR:</strong> Status Register</li>
+                <li><strong>SPIx_DR:</strong> Data Register</li>
+                <li>DMA-Unterstützung</li>
+                <li>Bis zu 50+ MHz</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- Betriebsarten -->
+        <section>
+          <h2>Betriebsarten</h2>
+          <div class="two-column">
+            <div class="fragment">
+              <h4>Polling (Abfrage)</h4>
+              <ul>
+                <li>Einfache Implementierung</li>
+                <li>CPU-lastig</li>
+                <li>Gut für einfache Anwendungen</li>
+                <li>Warteschleifen notwendig</li>
+              </ul>
+            </div>
+            <div class="fragment">
+              <h4>Interrupt (Ereignis)</h4>
+              <ul>
+                <li>Effiziente CPU-Nutzung</li>
+                <li>Komplexere Programmierung</li>
+                <li>Ideal für Multi-Tasking</li>
+                <li>Asynchrone Verarbeitung</li>
+              </ul>
+            </div>
+          </div>
+          <div class="fragment">
+            <h4>DMA (Direct Memory Access)</h4>
+            <ul>
+              <li>CPU-freie Übertragung</li>
+              <li>Für große Datenmengen</li>
+              <li>Höchste Effizienz</li>
+              <li>Komplexe Einrichtung</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- Code-Beispiel -->
+        <section>
+          <h2>Code-Beispiel - AVR C</h2>
+          <div class="code-container">
+            <pre><code class="c">
+// SPI Initialisierung als Master
+void SPI_MasterInit(void) {
+    // MOSI, SCK, SS als Output
+    DDR_SPI |= (1&lt;&lt;DD_MOSI)|(1&lt;&lt;DD_SCK)|(1&lt;&lt;DD_SS);
+    
+    // SPI aktivieren, Master, Mode 0, F_CPU/16
+    SPCR = (1&lt;&lt;SPE)|(1&lt;&lt;MSTR)|(1&lt;&lt;SPR0);
+}
+
+// Daten senden und empfangen
+uint8_t SPI_Transfer(uint8_t data) {
+    // Daten in Register schreiben
+    SPDR = data;
+    
+    // Warten bis Übertragung fertig
+    while(!(SPSR & (1&lt;&lt;SPIF)));
+    
+    // Empfangene Daten zurückgeben
+    return SPDR;
+}
+
+// Slave auswählen und abwählen
+void SPI_SelectSlave(void) { PORT_SPI &amp;= ~(1&lt;&lt;DD_SS); }
+void SPI_DeselectSlave(void) { PORT_SPI |= (1&lt;&lt;DD_SS); }
+            </code></pre>
+          </div>
+          
+        </section>
+
+        <!-- Praxisbeispiel - Sensor -->
+        <section>
+          <h2>Praxisbeispiel - Beschleunigungssensor</h2>
+          <p>MPU-6050 mit SPI-Schnittstelle:</p>
+          <div class="code-container" style="font-size: 0.7em;">
+            <pre><code class="c">
+// Sensor konfigurieren
+SPI_SelectSlave();
+SPI_Transfer(0x6B);  // Power Management Register
+SPI_Transfer(0x00);  // Wake up
+SPI_DeselectSlave();
+
+// Beschleunigungsdaten lesen
+SPI_SelectSlave();
+SPI_Transfer(0x3B | 0x80);  // ACCEL_XOUT_H mit Read-Bit
+uint8_t x_high = SPI_Transfer(0x00);  // Dummy für Empfang
+uint8_t x_low = SPI_Transfer(0x00);   // Nächster Transfer
+SPI_DeselectSlave();
+
+int16_t accel_x = (x_high &lt;&lt; 8) | x_low;
+            </code></pre>
+          </div>
+          
+          <div class="fragment image-placeholder">
+            [Bild: MPU-6050 Sensor auf einem Breakout-Board]
+            <p>Foto des tatsächlichen Sensors mit SPI-Anschlüssen</p>
+          </div>
+        </section>
+
+        <!-- Praxisbeispiel - SD-Karte -->
+        <section>
+          <h2>Praxisbeispiel - SD-Karte</h2>
+          <p>SD-Karten unterstützen SPI-Mode für einfachere Ansteuerung:</p>
+          <div style="font-size: 0.8em;">
+            <div class="fragment">
+              <h4>Initialisierungssequenz:</h4>
+              <ol>
+                <li>Mindestens 74 Taktimpulse ohne CS</li>
+                <li>CMD0 (GO_IDLE_STATE) senden</li>
+                <li>CMD8 (SEND_IF_COND) für Voltage Check</li>
+                <li>CMD58 (READ_OCR) lesen</li>
+                <li>ACMD41 (SD_SEND_OP_COND) initialisieren</li>
+              </ol>
+            </div>
+            <div class="fragment">
+              <h4>Block lesen (CMD17):</h4>
+              <div class="code-container">
+                <pre><code class="c">
+SPI_Transfer(0x51);        // CMD17 - READ_SINGLE_BLOCK
+SPI_Transfer(adress >> 24); // 32-bit Address
+SPI_Transfer(adress >> 16);
+SPI_Transfer(adress >> 8);
+SPI_Transfer(adress);
+SPI_Transfer(0x95);        // CRC
+
+// Warte auf Data Token (0xFE)
+while(SPI_Transfer(0xFF) != 0xFE);
+
+// Lese 512 Byte Daten
+for(int i=0; i&lt;512; i++) {
+    buffer[i] = SPI_Transfer(0xFF);
+}
+                </code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Blockdiagramm -->
+        <section>
+          <h2>Blockdiagramm - Typische SPI Schaltung</h2>
+          <div class="diagram">
+            <pre style="font-size: 0.6em; line-height: 1.3;">
+    ╔═════════════════════╗
+    ║   Mikrocontroller   ║
+    ║      (Master)       ║
+    ╠═════════════════════╣
+    ║ MOSI → ───────────┐ ║
+    ║ MISO ← ───────────┘ ║
+    ║ SCK  → ───────────┐ ║
+    ║ SS1  → ────┐      │ ║
+    ║ SS2  → ────┼────┐ │ ║
+    ╚════════════│====│=│=╝
+                 │    │ │
+    ╔════════════╩╗   │ │   ╔════════════╗
+    ║   Sensor    ║   │ │   ║  Display   ║
+    ║  (Slave1)   ║   │ │   ║  (Slave3)  ║
+    ╠═════════════╣   │ │   ╠════════════╣
+    ║ MOSI ← ─────┼───┘ │   ║ MOSI ← ────┼─────┐
+    ║ MISO → ─────┼─────┘   ║ MISO → ────┼─────┘
+    ║ SCK  ← ─────┼─────────║ SCK  ← ────┼─────┐
+    ║ SS   ← ─────┘         ║ SS   ← ────┘     │
+    ╚═══════════════════════╚══════════════════╝
+            </pre>
+          </div>
+          <p class="fragment"><strong>Shared Bus:</strong> MOSI, MISO, SCK werden von allen Slaves geteilt</p>
+          <p class="fragment"><strong>Individuelle SS:</strong> Jeder Slave hat eigene Select-Leitung</p>
+        </section>
+
+        <!-- Performance-Vergleich -->
+        <section>
+          <h2>Performance-Vergleich</h2>
+          <table class="comparison-table">
+            <tr>
+              <th>Schnittstelle</th>
+              <th>Max. Geschwindigkeit</th>
+              <th>Typische Anwendung</th>
+              <th>Effizienz</th>
+            </tr>
+            <tr class="fragment">
+              <td><strong>SPI</strong></td>
+              <td>50-100+ MHz</td>
+              <td>Sensoren, Speicher, Displays</td>
+              <td>Sehr hoch (~90%)</td>
+            </tr>
+            <tr class="fragment">
+              <td><strong>I²C</strong></td>
+              <td>100 kHz - 3.4 MHz</td>
+              <td>Konfigurationsregister, ICs</td>
+              <td>Mittel (~70%)</td>
+            </tr>
+            <tr class="fragment">
+              <td><strong>UART</strong></td>
+              <td>115.2 kbaud - 4 Mbaud</td>
+              <td>PC-Kommunikation, Module</td>
+              <td>Niedrig (~50%)</td>
+            </tr>
+          </table>
+          <p class="fragment" style="margin-top: 20px;"><strong>SPI Vorteil:</strong> Kein Adress-Overhead, direkte Datenübertragung</p>
+        </section>
+
+        <!-- Vor- und Nachteile -->
+        <section>
+          <h2>Vor- und Nachteile</h2>
+          <div class="two-column">
+            <div>
+              <h4 class="fragment highlight-green">Vorteile</h4>
+              <ul>
+                <li class="fragment">Sehr hohe Geschwindigkeit</li>
+                <li class="fragment">Einfaches Protokoll</li>
+                <li class="fragment">Voll-Duplex Betrieb</li>
+                <li class="fragment">Flexible Datenlängen</li>
+                <li class="fragment">Keine Adressierung nötig</li>
+                <li class="fragment">Push-Pull Treiber</li>
+                <li class="fragment">Wenig CPU-Overhead</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="fragment highlight-red">Nachteile</h4>
+              <ul>
+                <li class="fragment">Viele Leitungen (4+ pro Slave)</li>
+                <li class="fragment">Keine Fehlererkennung</li>
+                <li class="fragment">Kein Flow-Control</li>
+                <li class="fragment">Nur kurze Distanzen</li>
+                <li class="fragment">Kein Multi-Master</li>
+                <li class="fragment">Hardware-Addressierung</li>
+                <li class="fragment">Standardisierung fehlt</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- Vergleichstabelle -->
+        <section>
+          <h2>Vergleichstabelle: SPI vs I²C vs UART</h2>
+          <table class="comparison-table">
+            <tr>
+              <th>Merkmal</th>
+              <th>SPI</th>
+              <th>I²C</th>
+              <th>UART</th>
+            </tr>
+            <tr class="fragment">
+              <td><strong>Geschwindigkeit</strong></td>
+              <td>Hoch (100+ MHz)</td>
+              <td>Mittel (3.4 MHz)</td>
+              <td>Niedrig (4 Mbaud)</td>
+            </tr>
+            <tr class="fragment">
+              <td><strong>Leitungen</strong></td>
+              <td>4+ (pro Slave mehr SS)</td>
+              <td>2 (shared)</td>
+              <td>2-3 (pro Verbindung)</td>
+            </tr>
+            <tr class="fragment">
+              <td><strong>Duplex</strong></td>
+              <td>Voll</td>
+              <td>Halb</td>
+              <td>Voll/Halb</td>
+            </tr>
+            <tr class="fragment">
+              <td><strong>Synchronisation</strong></td>
+              <td>Synchron (SCK)</td>
+              <td>Synchron (SCL)</td>
+              <td>Asynchron</td>
+            </tr>
+            <tr class="fragment">
+              <td><strong>Topologie</strong></td>
+              <td>Master-Slave</td>
+              <td>Multi-Master</td>
+              <td>Peer-to-Peer</td>
+            </tr>
+            <tr class="fragment">
+              <td><strong>Hardware-Overhead</strong></td>
+              <td>Gering</td>
+              <td>Mittel</td>
+              <td>Gering</td>
+            </tr>
+          </table>
+        </section>
+
+        <!-- Fehlerquellen -->
+        <section>
+          <h2>Fehlerquellen und Debugging</h2>
+          <div class="two-column">
+            <div class="fragment">
+              <h4>Häufige Probleme:</h4>
+              <ul>
+                <li>Falscher SPI-Mode</li>
+                <li>Taktfrequenz zu hoch</li>
+                <li>Slave-Select Timing</li>
+                <li>Elektrische Probleme</li>
+                <li>Race Conditions</li>
+                <li>Pegelanpassung</li>
+              </ul>
+            </div>
+            <div class="fragment">
+              <h4>Debugging-Tools:</h4>
+              <ul>
+                <li>Logikanalysator</li>
+                <li>Oszilloskop</li>
+                <li>SPI-Bus-Monitor</li>
+                <li>Bit-banging Test</li>
+                <li>Protokoll-Analyzer</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- Advanced SPI Features -->
+        <section>
+          <!-- Subslide 1: Introduction -->
+          <section>
+            <h2>Erweiterte SPI-Funktionen</h2>
+            <p>Moderne SPI-Implementierungen bieten zusätzliche Funktionen für spezielle Anwendungen</p>
+          </section>
+
+          <!-- Subslide 2: Hardware Features -->
+          <section>
+            <h3>Hardware-Erweiterungen</h3>
+            <ul>
+              <li class="fragment"><strong>DMA-Unterstützung:</strong> CPU-freie Datenübertragung</li>
+              <li class="fragment"><strong>FIFO-Puffer:</strong> Reduziert Interrupt-Last</li>
+              <li class="fragment"><strong>CRC-Berechnung:</strong> Hardware-Unterstützung für Fehlererkennung</li>
+              <li class="fragment"><strong>Multi-Master-Fähigkeit:</strong> In einigen Implementierungen</li>
+              <li class="fragment"><strong>Variable Datenbreite:</strong> 4-16 Bit pro Übertragung</li>
+            </ul>
+          </section>
+
+          <!-- Subslide 3: Software Features -->
+          <section>
+            <h3>Software-Erweiterungen</h3>
+            <ul>
+              <li class="fragment"><strong>Automatische SS-Steuerung:</strong> Hardware-gesteuertes Chip Select</li>
+              <li class="fragment"><strong>Interrupt-gesteuerte Übertragung:</strong> Effiziente CPU-Nutzung</li>
+              <li class="fragment"><strong>Datenpaketierung:</strong> Automatische Block-Übertragungen</li>
+              <li class="fragment"><strong>Fehlerbehandlung:</strong> Timeout- und CRC-Überwachung</li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- SPI Clock Configuration -->
+        <section>
+          <h2>Taktkonfiguration und Timing</h2>
+          
+          <div class="two-column">
+            <div class="fragment">
+              <h4>Taktquellen</h4>
+              <ul>
+                <li><strong>Systemtakt:</strong> Direkt vom CPU-Takt abgeleitet</li>
+                <li><strong>PLL:</strong> Phase-Locked Loop für genaue Frequenzen</li>
+                <li><strong>Externer Oszillator:</strong> Unabhängige Taktquelle</li>
+                <li><strong>Teiler:</strong> Programmierbare Frequenzteilung</li>
+              </ul>
+            </div>
+            
+            <div class="fragment">
+              <h4>Timing-Parameter</h4>
+              <ul>
+                <li><strong>Setup-Zeit:</strong> Daten stabil vor Taktflanke</li>
+                <li><strong>Hold-Zeit:</strong> Daten stabil nach Taktflanke</li>
+                <li><strong>Propagation Delay:</strong> Signal-Laufzeiten</li>
+                <li><strong>Rise/Fall-Time:</strong> Flankensteilheit</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="fragment" style="margin-top: 20px;">
+            <h4>Berechnung Beispiel:</h4>
+            <p>Systemtakt: 80 MHz, Prescaler: 8 → SPI-Takt: 10 MHz</p>
+            <p>Bit-Zeit: 100 ns, Byte-Übertragung: 800 ns</p>
+          </div>
+        </section>
+
+        <!-- SPI Error Handling -->
+        <section>
+          <!-- Subslide 1: Error Types -->
+          <section>
+            <h2>Fehlerbehandlung bei SPI</h2>
+            <p>SPI bietet keine integrierte Fehlererkennung, erfordert daher spezielle Maßnahmen</p>
+          </section>
+
+          <!-- Subslide 2: Common Errors -->
+          <section>
+            <h3>Häufige Fehlerquellen</h3>
+            <ul>
+              <li class="fragment"><strong>Mode-Konflikt:</strong> Master und Slave unterschiedliche CPOL/CPHA</li>
+              <li class="fragment"><strong>Taktfrequenz:</strong> Zu schnell für Slave-Gerät</li>
+              <li class="fragment"><strong>Slave-Select Timing:</strong> Falsche Aktivierungsdauer</li>
+              <li class="fragment"><strong>Elektrische Probleme:</strong> Signal-Integrität, Übersprechen</li>
+              <li class="fragment"><strong>Race Conditions:</strong> Timing-Probleme bei schnellen Übertragungen</li>
+            </ul>
+          </section>
+
+          <!-- Subslide 3: Error Detection -->
+          <section>
+            <h3>Fehlererkennungsmethoden</h3>
+            <ul>
+              <li class="fragment"><strong>Software-CRC:</strong> Berechnung in Software</li>
+              <li class="fragment"><strong>Checksummen:</strong> Einfache Prüfsummen</li>
+              <li class="fragment"><strong>Acknowledgement-Protokolle:</strong> Bestätigung durch Slave</li>
+              <li class="fragment"><strong>Timeout-Überwachung:</strong> Erkennt hängende Übertragungen</li>
+              <li class="fragment"><strong>Echo-Test:</strong> Zurücksenden empfangener Daten</li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- SPI in Different Architectures -->
+        <section>
+          <h2>SPI in verschiedenen Architekturen</h2>
+          
+          <div class="two-column">
+            <div class="fragment">
+              <h4>ARM Cortex-M</h4>
+              <ul>
+                <li><strong>Mehrere SPI/SSP-Module:</strong> Bis zu 6 unabhängige Instanzen</li>
+                <li><strong>DMA-Unterstützung:</strong> Effiziente Block-Übertragungen</li>
+                <li><strong>FIFO-Puffer:</strong> 8-16 Einträge pro Richtung</li>
+                <li><strong>Flexible Datenbreite:</strong> 4-16 Bit konfigurierbar</li>
+                <li><strong>CRC-Einheit:</strong> Hardware-CRC-Berechnung</li>
+              </ul>
+            </div>
+            
+            <div class="fragment">
+              <h4>AVR/Arduino</h4>
+              <ul>
+                <li><strong>Einfache Konfiguration:</strong> Wenige Register</li>
+                <li><strong>Feste Datenbreite:</strong> Typisch 8 Bit</li>
+                <li><strong>Software-SPI:</strong> Bit-banging auf beliebigen Pins</li>
+                <li><strong>Bibliotheken:</strong> Vereinfachte Anwendung</li>
+                <li><strong>Geschwindigkeit:</strong> Bis zu F_CPU/2</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="fragment">
+            <h4>ESP32</h4>
+            <ul>
+              <li><strong>VSPI und HSPI:</strong> Zwei unabhängige SPI-Module</li>
+              <li><strong>DMA-beschleunigt:</strong> Bis zu 80 MHz</li>
+              <li><strong>Quad-SPI Unterstützung:</strong> Für Flash-Speicher</li>
+              <li><strong>Flexible Pin-Belegung:</strong> Nahezu beliebige Pin-Zuordnung</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- SPI Performance Optimization -->
+        <section>
+          <!-- Subslide 1: Optimization Overview -->
+          <section>
+            <h2>Performance-Optimierung</h2>
+            <p>Techniken zur Maximierung der SPI-Leistung in Embedded-Systemen</p>
+          </section>
+
+          <!-- Subslide 2: Hardware Optimization -->
+          <section>
+            <h3>Hardware-Optimierung</h3>
+            <ul>
+              <li class="fragment"><strong>Kurze Leitungen:</strong> Minimiert Signal-Laufzeiten</li>
+              <li class="fragment"><strong>Pull-up/-down Widerstände:</strong> Nur bei Bedarf</li>
+              <li class="fragment"><strong>Puffer-ICs:</strong> Signal-Verstärkung bei langen Leitungen</li>
+              <li class="fragment"><strong>Ground Plane:</strong> Verbessert Signal-Integrität</li>
+              <li class="fragment"><strong>Entstörkondensatoren:</strong> Reduziert High-Frequency-Noise</li>
+            </ul>
+          </section>
+
+          <!-- Subslide 3: Software Optimization -->
+          <section>
+            <h3>Software-Optimierung</h3>
+            <ul>
+              <li class="fragment"><strong>DMA-Nutzung:</strong> CPU-freie Übertragungen</li>
+              <li class="fragment"><strong>Interrupt-gesteuert:</strong> Vermeidet Polling-Overhead</li>
+              <li class="fragment"><strong>Pufferung:</strong> Reduziert Übertragungs-Startups</li>
+              <li class="fragment"><strong>Bulk-Transfers:</strong> Übertragung mehrerer Bytes auf einmal</li>
+              <li class="fragment"><strong>Optimierte Taktfrequenz:</strong> Maximal mögliche Geschwindigkeit</li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- SPI Protocol Extensions -->
+        <section>
+          <h2>SPI-Protokoll-Erweiterungen</h2>
+          
+          <div class="two-column">
+            <div class="fragment">
+              <h4>Dual SPI</h4>
+              <ul>
+                <li><strong>Zwei Datenleitungen:</strong> MOSI und MISO bidirektional</li>
+                <li><strong>Verdoppelte Bandbreite:</strong> Theoretisch 2x Geschwindigkeit</li>
+                <li><strong>Einfache Implementierung:</strong> Minimaler Hardware-Overhead</li>
+                <li><strong>Anwendung:</strong> SD-Karten, Flash-Speicher</li>
+              </ul>
+            </div>
+            
+            <div class="fragment">
+              <h4>Quad SPI (QSPI)</h4>
+              <ul>
+                <li><strong>Vier Datenleitungen:</strong> IO0-IO3 für Daten</li>
+                <li><strong>Vierfache Bandbreite:</strong> Theoretisch 4x Geschwindigkeit</li>
+                <li><strong>Komplexere Steuerung:</strong> Erweiterte Protokolle</li>
+                <li><strong>Anwendung:</strong> Hochgeschwindigkeits-Flash</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="fragment">
+            <h4>Octo-SPI</h4>
+            <ul>
+              <li><strong>Acht Datenleitungen:</strong> Maximale Parallelität</li>
+              <li><strong>Extreme Geschwindigkeit:</strong> Bis zu 400+ MB/s</li>
+              <li><strong>Memory-Mapped Mode:</strong> Direkter Speicherzugriff</li>
+              <li><strong>Anwendung:</strong> Externe RAM/Flash-Speicher</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- SPI in Real-World Applications -->
+        <section>
+          <!-- Subslide 1: Application Overview -->
+          <section>
+            <h2>SPI in der Praxis</h2>
+            <p>Konkrete Implementierungsbeispiele aus realen Projekten</p>
+          </section>
+
+          <!-- Subslide 2: Industrial Applications -->
+          <section>
+            <h3>Industrielle Anwendungen</h3>
+            <ul>
+              <li class="fragment"><strong>Motorsteuerung:</strong> Encoder-Auslesung, Treiber-Kommunikation</li>
+              <li class="fragment"><strong>Prozessautomation:</strong> Sensor-Netzwerke, Aktor-Steuerung</li>
+              <li class="fragment"><strong>Medizingeräte:</strong> Hochpräzise Messwerterfassung</li>
+              <li class="fragment"><strong>Energiemanagement:</strong> Strom-, Spannungs-Messung</li>
+              <li class="fragment"><strong>Automotive:</strong> Steuergeräte-Kommunikation</li>
+            </ul>
+          </section>
+
+          <!-- Subslide 3: Consumer Applications -->
+          <section>
+            <h3>Consumer-Anwendungen</h3>
+            <ul>
+              <li class="fragment"><strong>Smartphones:</strong> Touch-Controller, Sensoren</li>
+              <li class="fragment"><strong>IoT-Geräte:</strong> WLAN/Bluetooth-Module</li>
+              <li class="fragment"><strong>Smart Home:</strong> Sensornetzwerke, Aktoren</li>
+              <li class="fragment"><strong>Wearables:</strong> Biosensoren, Display-Treiber</li>
+              <li class="fragment"><strong>Gaming:</strong> Controller, Peripheriegeräte</li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- SPI Debugging Techniques -->
+        <section>
+          <h2>Debugging und Fehlersuche</h2>
+          
+          <div class="two-column">
+            <div class="fragment">
+              <h4>Hardware-Tools</h4>
+              <ul>
+                <li><strong>Logikanalysator:</strong> Signal-Analyse, Timing-Messung</li>
+                <li><strong>Oszilloskop:</strong> Signal-Integrität, Störungen</li>
+                <li><strong>Protokoll-Analyzer:</strong> Dekodierte SPI-Daten</li>
+                <li><strong>Bus-Monitor:</strong> Echtzeit-Überwachung</li>
+                <li><strong>JTAG-Debugger:</strong> Register-Zugriff</li>
+              </ul>
+            </div>
+            
+            <div class="fragment">
+              <h4>Software-Tools</h4>
+              <ul>
+                <li><strong>Debug-Ausgaben:</strong> Serial Console Output</li>
+                <li><strong>LED-Indikatoren:</strong> Visuelle Status-Anzeige</li>
+                <li><strong>Test-Patterns:</strong> Bekannte Datenmuster</li>
+                <li><strong>Loopback-Tests:</strong> Selbsttest-Funktionen</li>
+                <li><strong>Logging:</strong> Protokollierung von Übertragungen</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="fragment">
+            <h4>Debugging-Strategien</h4>
+            <ul>
+              <li><strong>Bottom-Up-Ansatz:</strong> Hardware zu Software</li>
+              <li><strong>Divide and Conquer:</strong> System in Teile zerlegen</li>
+              <li><strong>Known-Good-Reference:</strong> Vergleich mit funktionierendem System</li>
+              <li><strong>Minimal Test Case:</strong> Reduzierung auf wesentliche Komponenten</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- SPI Best Practices -->
+        <section>
+          <!-- Subslide 1: Design Best Practices -->
+          <section>
+            <h2>Best Practices für SPI-Design</h2>
+            <p>Erprobte Methoden für zuverlässige SPI-Implementierungen</p>
+          </section>
+
+          <!-- Subslide 2: Hardware Design -->
+          <section>
+            <h3>Hardware-Design</h3>
+            <ul>
+              <li class="fragment"><strong>Konsistente Pegel:</strong> 3.3V oder 5V im gesamten System</li>
+              <li class="fragment"><strong>Kurze Signalleitungen:</strong> < 10cm für hohe Geschwindigkeiten</li>
+              <li class="fragment"><strong>Masseebene:</strong> Kontinuierliche Ground-Return-Paths</li>
+              <li class="fragment"><strong>Entkopplung:</strong> 100nF Kondensatoren nahe ICs</li>
+              <li class="fragment"><strong>Leiterbahn-Impedanz:</strong> Konsistente 50Ω Characteristic Impedance</li>
+            </ul>
+          </section>
+
+          <!-- Subslide 3: Software Design -->
+          <section>
+            <h3>Software-Design</h3>
+            <ul>
+              <li class="fragment"><strong>Abstraktionsebenen:</strong> Hardware-unabhängige Treiber</li>
+              <li class="fragment"><strong>Fehlerbehandlung:</strong> Robuste Exception-Handling</li>
+              <li class="fragment"><strong>Konfigurierbarkeit:</strong> Flexible Parameter-Einstellung</li>
+              <li class="fragment"><strong>Dokumentation:</strong> Klare API-Beschreibung</li>
+              <li class="fragment"><strong>Testbarkeit:</strong> Einfache Unit-Test-Integration</li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- SPI Future Developments -->
+        <section>
+          <h2>Zukunft und Entwicklungstrends</h2>
+          
+          <div class="two-column">
+            <div class="fragment">
+              <h4>Geschwindigkeitssteigerung</h4>
+              <ul>
+                <li><strong>DDR-Modi:</strong> Double Data Rate Übertragungen</li>
+                <li><strong>SerDes-Technik:</strong> Serializer/Deserializer für höhere Frequenzen</li>
+                <li><strong>Optische Verbindungen:</strong> SPI over Fiber für lange Distanzen</li>
+                <li><strong>Multi-Lane:</strong> Parallele SPI-Kanäle</li>
+              </ul>
+            </div>
+            
+            <div class="fragment">
+              <h4>Protokoll-Erweiterungen</h4>
+              <ul>
+                <li><strong>SPI-Express:</strong> PCIe-ähnliche Erweiterung</li>
+                <li><strong>Secure SPI:</strong> Verschlüsselte Übertragungen</li>
+                <li><strong>QoS-Erweiterungen:</strong> Quality of Service Unterstützung</li>
+                <li><strong>Auto-Negotiation:</strong> Automatische Parameter-Abstimmung</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="fragment">
+            <h4>Anwendungsbereiche</h4>
+            <ul>
+              <li><strong>KI/ML-Beschleuniger:</strong> Schnelle Sensor-Daten-Übertragung</li>
+              <li><strong>5G/6G Hardware:</strong> Hochfrequente Signalverarbeitung</li>
+              <li><strong>Quantencomputing:</strong> Steuerung von Qubits</li>
+              <li><strong>Autonome Systeme:</strong> Echtzeit-Sensordaten-Fusion</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- Zusammenfassung -->
+        <section>
+          <h2>Zusammenfassung</h2>
+          <div style="text-align: left; font-size: 0.9em;">
+            <p class="fragment"><strong>SPI ist ein synchrones serielles Interface</strong> mit Master-Slave-Architektur</p>
+            <p class="fragment"><strong>Vier Grundleitungen:</strong> MOSI, MISO, SCK, SS/CS</p>
+            <p class="fragment"><strong>Vier Betriebsmodi:</strong> Definiert durch CPOL und CPHA (0-3)</p>
+            <p class="fragment"><strong>Voll-Duplex:</strong> Gleichzeitige Übertragung in beide Richtungen</p>
+            <p class="fragment"><strong>Hohe Geschwindigkeit:</strong> Bis zu 100+ MHz, effizient durch wenig Overhead</p>
+            <p class="fragment"><strong>Einfache Implementierung:</strong> Wenig Protokoll-Overhead</p>
+            <p class="fragment"><strong>Ideale Anwendung:</strong> Board-interne Hochgeschwindigkeitskommunikation</p>
+          </div>
+        </section>
+
+        <!-- Moderne Entwicklungen -->
+        <section>
+          <h2>Moderne Entwicklungen</h2>
+          <div class="two-column">
+            <div class="fragment">
+              <h4>QSPI (Quad SPI)</h4>
+              <ul>
+                <li>Vier Datenleitungen</li>
+                <li>Bis zu 4x höherer Durchsatz</li>
+                <li>Für Flash-Speicher</li>
+                <li>DDR (Dual Data Rate)</li>
+              </ul>
+            </div>
+            <div class="fragment">
+              <h4>Dual SPI</h4>
+              <ul>
+                <li>Zwei Datenleitungen</li>
+                <li>Bidirektionale Nutzung</li>
+                <li>Einfache Erweiterung</li>
+                <li>Höhere Effizienz</li>
+              </ul>
+            </div>
+          </div>
+          <div class="fragment">
+            <h4>SPI Flash Memory</h4>
+            <ul>
+              <li>Nicht-flüchtiger Speicher</li>
+              <li>Weit verbreitet in Embedded Systems</li>
+              <li>Einfachere Ansteuerung</li>
+              <li>Hohe Geschwindigkeit</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- Ende -->
+        <section class="center-content">
+          <h1>Vielen Dank für Ihre Aufmerksamkeit!</h1>
+        </section>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js"></script>
+    <script>
+      Reveal.initialize({
+        hash: true,
+        plugins: [RevealHighlight],
+        transition: 'convex',
+        backgroundTransition: 'slide',
+        pdfSeparateFragments: false
+      });
+    </script>
+  </body>
+</html>
