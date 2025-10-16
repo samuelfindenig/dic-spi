@@ -113,6 +113,13 @@
         line-height: 1.2;
       }
 
+      .timing-diagram img {
+        background-color: #ccc;
+        display: block;
+        padding: 10px;
+      }
+
+
       .two-column {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -469,44 +476,20 @@
         </section>
 
         <!-- Timing-Diagramm -->
-        <section>
-          <h2>Timing-Diagramm - Mode 0</h2>
-          <img src="img/SPI_timing_diagram_CS.svg.png">
-          <div class="timing-diagram">
-          <ul style="font-size: 0.8em;">
-            <li class="fragment"><strong>SS geht LOW:</strong> Kommunikation startet</li>
-            <li class="fragment"><strong>Daten etablieren:</strong> Vor steigender Flanke</li>
-            <li class="fragment"><strong>Daten sampeln:</strong> Bei steigender Taktflanke</li>
-            <li class="fragment"><strong>SS geht HIGH:</strong> Kommunikation endet</li>
-          </ul>
-        </section>
-
-        <!-- Initialisierung -->
-        <section>
-          <h2>Initialisierung und Konfiguration</h2>
-          <p>Notwendige Einstellungen vor SPI-Betrieb:</p>
-          <div class="two-column">
-            <div class="fragment">
-              <h4>Hardware-Konfiguration:</h4>
-              <ul>
-                <li>Taktfrequenz einstellen</li>
-                <li>SPI-Modus wählen (CPOL/CPHA)</li>
-                <li>Datenformat (MSB/LSB first)</li>
-                <li>Slave-Select Pins konfigurieren</li>
-                <li>SPI-Modul aktivieren</li>
-              </ul>
-            </div>
-            <div class="fragment">
-              <h4>Software-Konfiguration:</h4>
-              <ul>
-                <li>Register setzen</li>
-                <li>Interrupts konfigurieren</li>
-                <li>DMA einrichten (optional)</li>
-                <li>Initialisierungssequenz</li>
-              </ul>
-            </div>
-          </div>
-        </section>
+<section>
+  <h2>Timing-Diagramm - Mode 0</h2>
+  <div style="background-color: #536a9c98; display: inline-block; padding: 10px; border-radius: 10px;" >
+    <img src="img/SPI_timing_diagram_CS.svg.png" style="display: block;">
+  </div>
+  <div class="timing-diagram">
+    <ul style="font-size: 0.8em;">
+      <li class="fragment"><strong>CS geht LOW:</strong> Kommunikation startet</li>
+      <li class="fragment"><strong>Daten etablieren:</strong> Vor steigender/fallender Flanke</li>
+      <li class="fragment"><strong>Daten sampeln:</strong> Bei steigender/fallender Taktflanke</li>
+      <li class="fragment"><strong>CS geht HIGH:</strong> Kommunikation endet</li>
+    </ul>
+  </div>
+</section>
 
         <!-- Übertragungsablauf -->
         <section>
@@ -514,8 +497,7 @@
           <ol style="font-size: 0.9em;">
             <li class="fragment"><strong>Slave auswählen:</strong> SS-Pin auf LOW setzen</li>
             <li class="fragment"><strong>Takt generieren:</strong> SCK mit gewünschter Frequenz</li>
-            <li class="fragment"><strong>Daten senden:</strong> Parallel-zu-Seriel auf MOSI</li>
-            <li class="fragment"><strong>Daten empfangen:</strong> Seriel-zu-Parallel von MISO</li>
+            <li class="fragment"><strong>Daten senden / empfangen:</strong> MOSI/MISO</li>
             <li class="fragment"><strong>Übertragung abschließen:</strong> SS-Pin auf HIGH setzen</li>
           </ol>
           <div class="fragment" style="margin-top: 20px;">
@@ -642,81 +624,8 @@ int16_t accel_x = (x_high &lt;&lt; 8) | x_low;
             </code></pre>
           </div>
           
-          <div class="fragment image-placeholder">
-            [Bild: MPU-6050 Sensor auf einem Breakout-Board]
-            <p>Foto des tatsächlichen Sensors mit SPI-Anschlüssen</p>
-          </div>
         </section>
 
-        <!-- Praxisbeispiel - SD-Karte -->
-        <section>
-          <h2>Praxisbeispiel - SD-Karte</h2>
-          <p>SD-Karten unterstützen SPI-Mode für einfachere Ansteuerung:</p>
-          <div style="font-size: 0.8em;">
-            <div class="fragment">
-              <h4>Initialisierungssequenz:</h4>
-              <ol>
-                <li>Mindestens 74 Taktimpulse ohne CS</li>
-                <li>CMD0 (GO_IDLE_STATE) senden</li>
-                <li>CMD8 (SEND_IF_COND) für Voltage Check</li>
-                <li>CMD58 (READ_OCR) lesen</li>
-                <li>ACMD41 (SD_SEND_OP_COND) initialisieren</li>
-              </ol>
-            </div>
-            <div class="fragment">
-              <h4>Block lesen (CMD17):</h4>
-              <div class="code-container">
-                <pre><code class="c">
-SPI_Transfer(0x51);        // CMD17 - READ_SINGLE_BLOCK
-SPI_Transfer(adress >> 24); // 32-bit Address
-SPI_Transfer(adress >> 16);
-SPI_Transfer(adress >> 8);
-SPI_Transfer(adress);
-SPI_Transfer(0x95);        // CRC
-
-// Warte auf Data Token (0xFE)
-while(SPI_Transfer(0xFF) != 0xFE);
-
-// Lese 512 Byte Daten
-for(int i=0; i&lt;512; i++) {
-    buffer[i] = SPI_Transfer(0xFF);
-}
-                </code></pre>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Blockdiagramm -->
-        <section>
-          <h2>Blockdiagramm - Typische SPI Schaltung</h2>
-          <div class="diagram">
-            <pre style="font-size: 0.6em; line-height: 1.3;">
-    ╔═════════════════════╗
-    ║   Mikrocontroller   ║
-    ║      (Master)       ║
-    ╠═════════════════════╣
-    ║ MOSI → ───────────┐ ║
-    ║ MISO ← ───────────┘ ║
-    ║ SCK  → ───────────┐ ║
-    ║ SS1  → ────┐      │ ║
-    ║ SS2  → ────┼────┐ │ ║
-    ╚════════════│====│=│=╝
-                 │    │ │
-    ╔════════════╩╗   │ │   ╔════════════╗
-    ║   Sensor    ║   │ │   ║  Display   ║
-    ║  (Slave1)   ║   │ │   ║  (Slave3)  ║
-    ╠═════════════╣   │ │   ╠════════════╣
-    ║ MOSI ← ─────┼───┘ │   ║ MOSI ← ────┼─────┐
-    ║ MISO → ─────┼─────┘   ║ MISO → ────┼─────┘
-    ║ SCK  ← ─────┼─────────║ SCK  ← ────┼─────┐
-    ║ SS   ← ─────┘         ║ SS   ← ────┘     │
-    ╚═══════════════════════╚══════════════════╝
-            </pre>
-          </div>
-          <p class="fragment"><strong>Shared Bus:</strong> MOSI, MISO, SCK werden von allen Slaves geteilt</p>
-          <p class="fragment"><strong>Individuelle SS:</strong> Jeder Slave hat eigene Select-Leitung</p>
-        </section>
 
         <!-- Performance-Vergleich -->
         <section>
